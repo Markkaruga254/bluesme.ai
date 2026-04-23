@@ -1,0 +1,1 @@
+"""BlueSME contracts package."""
