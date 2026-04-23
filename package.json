@@ -1,0 +1,40 @@
+{
+  "name": "blues-sme",
+  "version": "1.0.0",
+  "description": "A project where a team of specialized AI agents designed to support SME's in ,mombasa leveraging AI and blockchain technology",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Markkaruga254/SME-BLUECONOMY-HACKATHON.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Markkaruga254/SME-BLUECONOMY-HACKATHON/issues"
+  },
+  "homepage": "https://github.com/Markkaruga254/SME-BLUECONOMY-HACKATHON#readme",
+  "dependencies": {
+    "@types/recharts": "^1.8.29",
+    "autoprefixer": "^10.5.0",
+    "framer-motion": "^12.38.0",
+    "next": "^16.2.3",
+    "postcss": "^8.5.10",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "recharts": "^3.8.1",
+    "tailwindcss": "^4.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.2"
+  }
+}

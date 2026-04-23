@@ -1,0 +1,82 @@
+# ── Python environments ───────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+.Python
+
+# ── Python testing ────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ── Environment variables ─────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ── Node / Next.js ────────────────────────────────────────
+node_modules/
+.next/
+out/
+.vercel
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Next.js build output ──────────────────────────────────
+.next/standalone/
+.next/static/
+
+# ── TypeScript ────────────────────────────────────────────
+*.tsbuildinfo
+
+# ── Generated files ───────────────────────────────────────
+funding_proofs/
+celerybeat-schedule
+celerybeat.pid
+
+# ── Database ──────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Docker ────────────────────────────────────────────────
+# (compose files are committed — don't ignore them)
+
+# ── IDE / editor ──────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Logs ─────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Secrets ───────────────────────────────────────────────
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ── QR codes & generated assets ──────────────────────────
+funding_proofs/
+qr_codes/
+
+# ── Jupyter ───────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
