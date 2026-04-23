@@ -1,0 +1,162 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# BlueSME Production Stack
+#
+# Services:
+#   postgres   — Primary database
+#   redis      — Celery broker + result backend
+#   worker     — Celery worker(s) — scale with: docker compose up --scale worker=4
+#   beat       — Celery beat scheduler (for future periodic tasks)
+#   bridge     — FastAPI queue bridge (Next.js → Celery)
+#   nextjs     — Next.js frontend + API routes
+# ──────────────────────────────────────────────────────────────────────────────
+
+networks:
+  bluesme_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  funding_proofs:
+
+# ── Shared environment ────────────────────────────────────────────────────────
+x-common-env: &common-env
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: bluesme
+  POSTGRES_USER: bluesme
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bluesme_secret}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/0
+  BLUESME_TEST_MODE: ${BLUESME_TEST_MODE:-1}
+  BLUESME_MODEL: ${BLUESME_MODEL:-gemini/gemini-1.5-pro}
+  BLUESME_PYTHON: /usr/local/bin/python
+  QUEUE_MODE: "1"
+  QUEUE_BRIDGE_URL: http://bridge:8001
+  LOG_FORMAT: json
+  LOG_LEVEL: INFO
+
+x-python-base: &python-base
+  build:
+    context: .
+    dockerfile: Dockerfile.backend
+  volumes:
+    - .:/app
+    - funding_proofs:/app/funding_proofs
+  networks:
+    - bluesme_net
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  environment:
+    <<: *common-env
+
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks:
+      - bluesme_net
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: bluesme
+      POSTGRES_USER: bluesme
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bluesme_secret}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bluesme -d bluesme"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - bluesme_net
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Backend services ────────────────────────────────────────────────────────
+
+  worker:
+    <<: *python-base
+    command: >
+      celery -A backend.tasks.celery_app.celery_app worker
+      --loglevel=info
+      --queues=sale_queue,insights_queue,proof_queue,blockchain_queue,default
+      --concurrency=${CELERY_CONCURRENCY:-4}
+      --without-heartbeat
+      --without-gossip
+      --without-mingle
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *common-env
+      BLUESME_USE_POOL: "0"  # NullPool for forked workers
+
+  beat:
+    <<: *python-base
+    command: >
+      celery -A backend.tasks.celery_app.celery_app beat
+      --loglevel=info
+      --schedule=/tmp/celerybeat-schedule
+    restart: unless-stopped
+    profiles:
+      - scheduler  # Only starts with: docker compose --profile scheduler up
+
+  bridge:
+    <<: *python-base
+    command: >
+      uvicorn backend.services.queue_bridge:app
+      --host 0.0.0.0
+      --port 8001
+      --workers 2
+      --log-level info
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      <<: *common-env
+      BLUESME_USE_POOL: "1"  # QueuePool for the API bridge
+
+  # ── Frontend ────────────────────────────────────────────────────────────────
+
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    networks:
+      - bluesme_net
+    depends_on:
+      - bridge
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      QUEUE_MODE: "1"
+      QUEUE_BRIDGE_URL: http://bridge:8001
+      BLUESME_TEST_MODE: ${BLUESME_TEST_MODE:-1}
