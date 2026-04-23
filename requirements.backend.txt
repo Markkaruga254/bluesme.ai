@@ -1,0 +1,32 @@
+# Additional Python dependencies for the production backend
+# Install alongside requirements.txt:
+#   pip install -r requirements.txt -r requirements.backend.txt
+
+# ── Database ─────────────────────────────────────────────
+SQLAlchemy>=2.0.0
+psycopg2-binary>=2.9.9      # PostgreSQL driver
+alembic>=1.13.0              # DB migrations (future use)
+
+# ── Queue / Task system ───────────────────────────────────
+celery>=5.3.6
+redis>=5.0.0
+kombu>=5.3.4                 # Celery message library
+
+# ── FastAPI (queue bridge) ────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+httpx>=0.27.0                # Async HTTP client
+
+# ── Auth ──────────────────────────────────────────────────
+PyJWT>=2.8.0
+python-jose[cryptography]>=3.3.0  # alternative JWT lib
+
+# ── Validation ────────────────────────────────────────────
+# pydantic already in requirements.txt
+
+# ── Observability ─────────────────────────────────────────
+python-json-logger>=2.0.7
+
+# ── Utils ─────────────────────────────────────────────────
+python-multipart>=0.0.9
+httpx>=0.27.0

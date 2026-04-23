@@ -1,0 +1,32 @@
+# ── Backend Python image ──────────────────────────────────────────────────────
+FROM python:3.11-slim AS backend-base
+
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python dependencies first (layer cache)
+COPY requirements.txt requirements.backend.txt ./
+
+# Install base deps
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install backend-specific deps
+RUN pip install --no-cache-dir -r requirements.backend.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user for security
+RUN addgroup --system bluesme && adduser --system --ingroup bluesme bluesme
+RUN chown -R bluesme:bluesme /app
+USER bluesme
+
+# Initialize DB schema on startup (idempotent)
+ENTRYPOINT ["python", "-c", \
+    "from backend.db.session import init_db; init_db()"]
