@@ -139,9 +139,15 @@ BlueSME gives them:
 
 ### 🔒 Authentication & Safety
 - JWT-based auth with SME-scoped access control
-- SHA-256 idempotency keys prevent duplicate transactions
+- Strict SHA-256 idempotency keys block duplicate submissions at the DB level
 - Strict Pydantic schema validation on all agent inputs and outputs
 - LLM output parsing with 3-layer fallback strategy
+
+### 🔄 Reconciliation Engine
+- Distributed async periodic task running on **Celery Beat**
+- Cross-references PostgreSQL (source of truth) with Base Sepolia state
+- Automatically flags `missing_on_chain`, `missing_in_db`, and `data_mismatch`
+- Safe auto-repair capabilities with Redis distributed locks to prevent overlap
 
 ### ⚙️ Test Mode vs Live Mode
 | | Test Mode (`BLUESME_TEST_MODE=1`) | Live Mode (`BLUESME_TEST_MODE=0`) |
@@ -186,7 +192,8 @@ BlueSME was built in 8 iterative phases, each adding a meaningful layer:
 | **5 — Test Mode** | `BLUESME_TEST_MODE`, deterministic mocks, mock blockchain store |
 | **6 — Backend Upgrade** | PostgreSQL models, Celery/Redis queue, FastAPI bridge, JWT auth, structured logging, strict validation |
 | **7 — DevOps** | Dockerfiles, docker-compose, `.env.example`, backend requirements |
-| **8 — Cleanup** | Modular `backend/` structure, final README |
+| **8 — Idempotency & Safety** | SHA-256 idempotency constraint, race-condition fixes, Smart Regex Test Mode |
+| **9 — Integrity & Dashboard** | Automated Reconciliation Engine (Celery Beat), Glassmorphism Trust UI Dashboard |
 
 ---
 
@@ -386,13 +393,14 @@ bluesme/
 
 | Area | Status | Notes |
 |---|---|---|
-| Frontend dashboard | ✅ Complete | All 4 pages, responsive, animated |
-| Next.js API routes | ✅ Complete | Queue + legacy modes, job-status endpoint |
+| Frontend dashboard | ✅ Complete | "Trust Demo" UI with Glassmorphism & Framer Motion |
+| Next.js API routes | ✅ Complete | Queue modes, job-status, and reconciliation-status |
 | CrewAI agents (4) | ✅ Complete | Sales, Finance, Insights, Blockchain |
-| Test mode | ✅ Complete | Fully deterministic, no external calls |
-| PostgreSQL models | ✅ Complete | 5 tables with proper indexes |
-| Celery queue system | ✅ Implemented | Not yet stress-tested under production load |
-| FastAPI bridge | ✅ Implemented | Running, not load-tested |
+| Test mode | ✅ Complete | Smart Regex Parser, highly robust and deterministic |
+| PostgreSQL models | ✅ Complete | 6 tables (including ReconciliationLogs) with unique constraints |
+| Celery queue system | ✅ Complete | Redis-backed, idempotent, tested against race conditions |
+| Reconciliation Engine | ✅ Complete | Scheduled Celery Beat lock-safe auto-auditor |
+| FastAPI bridge | ✅ Implemented | Running |
 | JWT authentication | ✅ Implemented | Wallet-signature verification pending |
 | Blockchain (live) | ⚠️ Partial | Mock blockchain in test mode; live Base Sepolia integration wired but not audited |
 | CI/CD pipeline | ❌ Not yet | GitHub Actions planned |
