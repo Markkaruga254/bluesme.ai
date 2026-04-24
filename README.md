@@ -46,7 +46,9 @@ BlueSME gives them:
 - **A simple interface** to log daily sales in plain English or Swahili
 - **AI agents** that parse, validate, and analyse their financial activity
 - **An immutable blockchain record** on Base Sepolia for every transaction
+- **A Trust Demonstration Dashboard** allowing non-technical stakeholders to see live activity and system integrity
 - **A verifiable Funding Proof report** they can share with any lender or grant officer
+- **A Self-Healing Reconciliation Engine** that guarantees zero divergence between the database and the blockchain
 
 ---
 
@@ -61,7 +63,7 @@ BlueSME gives them:
 ┌────────────────────────▼────────────────────────────────────────────┐
 │                    NEXT.JS API ROUTES                               │
 │   POST /api/log-sale  │  /api/run-insights  │  /api/generate-proof  │
-│                    GET /api/job-status                              │
+│         GET /api/job-status  │  GET /api/reconciliation-status      │
 │                                                                     │
 │   QUEUE_MODE=0 → direct subprocess (legacy / dev)                  │
 │   QUEUE_MODE=1 → enqueue to Celery (production)                    │
@@ -75,19 +77,19 @@ BlueSME gives them:
 ┌────────────────────────▼────────────────────────────────────────────┐
 │                    REDIS (Port 6379)                                │
 │         Broker: sale_queue │ insights_queue │ proof_queue           │
-│                       blockchain_queue                              │
+│             blockchain_queue │ reconcile_queue                      │
 └────────────────────────┬────────────────────────────────────────────┘
                          │ Consume
 ┌────────────────────────▼────────────────────────────────────────────┐
-│                  CELERY WORKERS (×4 default)                        │
+│                  CELERY WORKERS & BEAT SCHEDULER                    │
 │   process_sale_task  │  generate_insights_task  │  generate_proof   │
-│                   blockchain_log_task                               │
+│         blockchain_log_task  │  reconcile_transactions_task         │
 └───────┬─────────────────────────┬───────────────────────────────────┘
         │                         │
 ┌───────▼──────────┐   ┌──────────▼──────────────────────────────────┐
 │   CREWAI FLOWS   │   │           POSTGRESQL (Port 5432)             │
 │                  │   │  SMEs │ Transactions │ Insights │ Proofs     │
-│  SaleLoggingFlow │   │                  AgentLogs                  │
+│  SaleLoggingFlow │   │          AgentLogs │ ReconciliationLogs      │
 │  InsightsFlow    │   └─────────────────────────────────────────────┘
 │  ProofFlow       │
 └───────┬──────────┘
@@ -108,14 +110,12 @@ BlueSME gives them:
 
 ## ✨ Features
 
-### 🖥 Frontend Dashboard
-- **Real-time KPI cards** — revenue, sales count, on-chain logs, net flow
-- **Interactive revenue chart** — 7-day area chart with Recharts
-- **AI Insights panel** — trigger analysis directly from the dashboard
-- **Activity timeline** — animated feed of all agent actions
-- **Test Mode / Live Mode** visual indicator throughout the UI
-- **Responsive design** — works on mobile and desktop
-- **Micro-animations** via Framer Motion throughout
+### 🖥 Trust Demonstration Dashboard
+- **Real-time KPI cards** — revenue, sales count, on-chain logs, and health score
+- **System Integrity Monitor** — Live feedback from the Reconciliation Engine
+- **Activity timeline** — Framer Motion-animated feed of all distributed agent actions
+- **Financial Proof output** — Instantly generates a clean, ZK-like audit certificate
+- **SaaS Glassmorphism Design** — built with Tailwind v4, Lucide icons, and deep dark-mode aesthetics
 
 ### 🤖 AI Agent System (CrewAI)
 | Agent | Role |
@@ -237,22 +237,25 @@ python scripts/init_db.py
 
 ### 5. Start all services
 
-Open **4 separate terminals**:
+Open **5 separate terminals**:
 
 ```bash
 # Terminal 1 — Celery worker
 celery -A backend.tasks.celery_app.celery_app worker \
   --loglevel=info \
-  --queues=sale_queue,insights_queue,proof_queue,blockchain_queue,default \
+  --queues=sale_queue,insights_queue,proof_queue,blockchain_queue,reconcile_queue,default \
   --concurrency=4
 
-# Terminal 2 — FastAPI queue bridge
+# Terminal 2 — Celery Beat (Reconciliation Engine)
+celery -A backend.tasks.celery_app.celery_app beat --loglevel=info
+
+# Terminal 3 — FastAPI queue bridge
 uvicorn backend.services.queue_bridge:app --port 8001 --reload
 
-# Terminal 3 — Next.js
+# Terminal 4 — Next.js
 npm run dev
 
-# Terminal 4 — (optional) Celery Flower monitoring
+# Terminal 5 — (optional) Celery Flower monitoring
 pip install flower && celery -A backend.tasks.celery_app.celery_app flower --port=5555
 ```
 
