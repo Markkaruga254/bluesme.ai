@@ -27,7 +27,7 @@ const MOCK_DATA: ChartDataPoint[] = [
   { label: "Sun", revenue: 11200, sales: 31 },
 ];
 
-function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div

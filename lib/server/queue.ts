@@ -75,7 +75,7 @@ export async function waitForJob(
         status: data.status as QueuedJobResponse["status"],
         output: (result.output as string) ?? "",
         testMode: Boolean(result.testMode),
-        error: (result.error as string) | undefined,
+        error: result.error ? String(result.error) : undefined,
       };
     }
 

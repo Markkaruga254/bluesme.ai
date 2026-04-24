@@ -147,6 +147,12 @@ class Transaction(Base):
     blockchain_confirmed = Column(Boolean, nullable=False, default=False)
     idempotency_key = Column(String(64), nullable=True, unique=True, index=True)
     job_id = Column(String(255), nullable=True, index=True)   # Celery job ID
+    status = Column(
+        String(50),
+        nullable=False,
+        default="pending_blockchain",
+        index=True,
+    )
     created_at = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -292,3 +298,39 @@ class AgentLog(Base):
 
     def __repr__(self) -> str:
         return f"<AgentLog {self.flow_type} [{self.status}] job={self.job_id}>"
+
+# ── Reconciliation ────────────────────────────────────────────────────────────
+
+class ReconciliationLog(Base):
+    """Log of inconsistencies found during DB vs Blockchain reconciliation."""
+
+    __tablename__ = "reconciliation_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    transaction_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("transactions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    sme_address = Column(String(255), nullable=True, index=True)
+    issue_type = Column(
+        String(50), 
+        nullable=False,
+        index=True, # 'missing_on_chain', 'missing_in_db', 'status_mismatch', 'data_mismatch'
+    )
+    details = Column(JSONB, nullable=False, default=dict)
+    resolved = Column(Boolean, nullable=False, default=False, index=True)
+    resolution_notes = Column(Text, nullable=True)
+    detected_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        default=_utcnow,
+    )
+
+    # Optional relationship if transaction_id exists
+    transaction = relationship("Transaction")
+
+    def __repr__(self) -> str:
+        return f"<ReconciliationLog {self.issue_type} [{self.id}]>"

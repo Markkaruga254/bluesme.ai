@@ -63,14 +63,16 @@ celery_app.conf.update(
         Queue("insights_queue", routing_key="insights"),
         Queue("proof_queue",   routing_key="proof"),
         Queue("blockchain_queue", routing_key="blockchain"),
+        Queue("reconcile_queue", routing_key="reconcile"),
         Queue("default",       routing_key="default"),
     ),
     task_default_queue="default",
     task_routes={
-        "backend.tasks.tasks.process_sale_task":       {"queue": "sale_queue"},
-        "backend.tasks.tasks.generate_insights_task":  {"queue": "insights_queue"},
-        "backend.tasks.tasks.generate_proof_task":     {"queue": "proof_queue"},
-        "backend.tasks.tasks.blockchain_log_task":     {"queue": "blockchain_queue"},
+        "backend.tasks.tasks.process_sale_task":             {"queue": "sale_queue"},
+        "backend.tasks.tasks.generate_insights_task":        {"queue": "insights_queue"},
+        "backend.tasks.tasks.generate_proof_task":           {"queue": "proof_queue"},
+        "backend.tasks.tasks.blockchain_log_task":           {"queue": "blockchain_queue"},
+        "backend.tasks.tasks.reconcile_transactions_task":   {"queue": "reconcile_queue"},
     },
 
     # Retry limits
@@ -79,7 +81,13 @@ celery_app.conf.update(
     task_time_limit=240,            # 4 min hard limit → kills worker process
 
     # Beat schedule (optional scheduler)
-    beat_schedule={},
+    beat_schedule={
+        "run-reconciliation-periodically": {
+            "task": "backend.tasks.tasks.reconcile_transactions_task",
+            "schedule": float(os.getenv("RECONCILIATION_INTERVAL_MINUTES", "5")) * 60.0,
+            "args": (None,),  # Pass None for sme_address to scan ALL
+        },
+    },
 )
 
 

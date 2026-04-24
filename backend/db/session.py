@@ -54,14 +54,19 @@ DATABASE_URL = _build_database_url()
 # Switch to QueuePool for the API server via BLUESME_USE_POOL=1.
 _use_pool = os.getenv("BLUESME_USE_POOL", "0") == "1"
 
+_pool_kwargs: dict = (
+    {"pool_size": 10, "max_overflow": 20}
+    if _use_pool
+    else {}
+)
+
 engine = create_engine(
     DATABASE_URL,
     poolclass=QueuePool if _use_pool else NullPool,
-    pool_size=10 if _use_pool else 0,
-    max_overflow=20 if _use_pool else 0,
     pool_pre_ping=True,          # detect stale connections
     echo=os.getenv("SQLALCHEMY_ECHO", "0") == "1",
     future=True,
+    **_pool_kwargs,
 )
 
 SessionLocal = sessionmaker(

@@ -1,9 +1,26 @@
 import time
 import uuid
 
-# In-memory mock database for the blockchain
-# Structure: { sme_address: [ {timestamp, activityType, amount, description, category, tx_hash} ] }
-MOCK_BLOCKCHAIN = {}
+import json
+import os
+
+MOCK_STATE_FILE = os.path.join(os.path.dirname(__file__), "mock_chain_state.json")
+
+def _load_state():
+    if os.path.exists(MOCK_STATE_FILE):
+        try:
+            with open(MOCK_STATE_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def _save_state(state):
+    with open(MOCK_STATE_FILE, "w") as f:
+        json.dump(state, f, indent=2)
+
+# In-memory mock database for the blockchain, loaded from disk
+MOCK_BLOCKCHAIN = _load_state()
 
 def log_activity_for(sme_address: str, activity_type: str, amount: int, description: str, category: str):
     """Mocks the smart contract's logActivityFor method."""
@@ -21,6 +38,8 @@ def log_activity_for(sme_address: str, activity_type: str, amount: int, descript
         "category": category,
         "tx_hash": tx_hash
     })
+    
+    _save_state(MOCK_BLOCKCHAIN)
 
     return tx_hash
 

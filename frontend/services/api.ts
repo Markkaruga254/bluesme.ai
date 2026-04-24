@@ -59,11 +59,17 @@ async function postWithRetry(
 
 export const api = {
   logSale: (payload: LogSalePayload) =>
-    postWithRetry("/api/log-sale", payload as Record<string, unknown>),
+    postWithRetry("/api/log-sale", payload as unknown as Record<string, unknown>),
 
   runInsights: (payload: RunInsightsPayload) =>
-    postWithRetry("/api/run-insights", payload as Record<string, unknown>),
+    postWithRetry("/api/run-insights", payload as unknown as Record<string, unknown>),
 
   generateProof: (payload: GenerateProofPayload) =>
-    postWithRetry("/api/generate-proof", payload as Record<string, unknown>),
+    postWithRetry("/api/generate-proof", payload as unknown as Record<string, unknown>),
+
+  getReconciliationStatus: async () => {
+    const res = await fetch("/api/reconciliation-status");
+    if (!res.ok) throw new Error("Failed to fetch reconciliation status");
+    return res.json();
+  },
 };

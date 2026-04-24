@@ -56,11 +56,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Queue error";
-      return sendError(res, 503, `Queue unavailable: ${message}`);
+      console.warn(`[WARNING] Queue unavailable (${message}). Falling back to legacy execution mode.`);
+      // Proceed to Legacy Mode fallback
     }
   }
 
-  // ── Legacy Mode: direct subprocess (existing behaviour) ──────────────────
+  // ── Legacy Mode: direct subprocess (fallback or explicitly requested) ──────
   try {
     const result = await runFlow("log_sale", { smeAddress, saleMessage });
     return res.status(200).json(result);
